@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="profile-section">
+    <div class="profile-header">
+        <h2>Профиль пользователя</h2>
+    </div>
+    
+    <div class="profile-info">
+        <h4>Основная информация</h4>
+        <div class="profile-info-item">
+            <span class="profile-info-label">Имя:</span>
+            <span class="profile-info-value">{{ current_user.name }}</span>
+        </div>
+        <div class="profile-info-item">
+            <span class="profile-info-label">Email:</span>
+            <span class="profile-info-value">{{ current_user.email }}</span>
+        </div>
+        <div class="profile-info-item">
+            <span class="profile-info-label">Дата регистрации:</span>
+            <span class="profile-info-value">{{ current_user.created_at.strftime('%d.%m.%Y %H:%M') }}</span>
+        </div>
+    </div>
+
+    <div class="profile-stats">
+        <h4>Статистика заказов</h4>
+        <div class="profile-stats-grid">
+            <div class="stats-item">
+                <h5>Всего заказов</h5>
+                <div class="stats-value">{{ orders|length }}</div>
+            </div>
+            <div class="stats-item">
+                <h5>Активных заказов</h5>
+                <div class="stats-value">{{ active_orders|length }}</div>
+            </div>
+            <div class="stats-item">
+                <h5>Завершённых заказов</h5>
+                <div class="stats-value">{{ completed_orders|length }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

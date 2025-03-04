@@ -1,0 +1,355 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "Order Management API",
+    "description": "API для управления заказами",
+    "version": "1.0.0"
+  },
+  "basePath": "/",
+  "schemes": [
+    "http"
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/orders": {
+      "get": {
+        "summary": "Получение списка заказов",
+        "description": "Возвращает список заказов текущего пользователя с пагинацией",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Номер страницы",
+            "required": false,
+            "type": "integer",
+            "default": 1
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "description": "Фильтр по статусу заказа (active, completed, cancelled)",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Успешный ответ",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "orders": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/Order"
+                  }
+                },
+                "pagination": {
+                  "$ref": "#/definitions/Pagination"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Требуется авторизация"
+          }
+        }
+      }
+    },
+    "/orders/create": {
+      "post": {
+        "summary": "Создание нового заказа",
+        "description": "Создает новый заказ с указанными товарами",
+        "parameters": [
+          {
+            "name": "order",
+            "in": "body",
+            "description": "Данные заказа",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/OrderInput"
+            }
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Перенаправление на страницу заказов после успешного создания"
+          },
+          "400": {
+            "description": "Ошибка валидации"
+          },
+          "401": {
+            "description": "Требуется авторизация"
+          }
+        }
+      }
+    },
+    "/orders/{order_id}/cancel": {
+      "post": {
+        "summary": "Отмена заказа",
+        "description": "Отменяет заказ с указанным ID",
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "description": "ID заказа",
+            "required": true,
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Заказ успешно отменен"
+          },
+          "400": {
+            "description": "Заказ не может быть отменен (неверный статус)"
+          },
+          "401": {
+            "description": "Требуется авторизация"
+          },
+          "403": {
+            "description": "Нет доступа к заказу"
+          },
+          "404": {
+            "description": "Заказ не найден"
+          }
+        }
+      }
+    },
+    "/orders/{order_id}/complete": {
+      "post": {
+        "summary": "Завершение заказа",
+        "description": "Завершает заказ с указанным ID",
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "description": "ID заказа",
+            "required": true,
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Заказ успешно завершен"
+          },
+          "400": {
+            "description": "Заказ не может быть завершен (неверный статус)"
+          },
+          "401": {
+            "description": "Требуется авторизация"
+          },
+          "403": {
+            "description": "Нет доступа к заказу"
+          },
+          "404": {
+            "description": "Заказ не найден"
+          }
+        }
+      }
+    },
+    "/orders/batch/complete": {
+      "post": {
+        "summary": "Пакетное завершение заказов",
+        "description": "Завершает несколько заказов одновременно",
+        "parameters": [
+          {
+            "name": "order_ids",
+            "in": "body",
+            "description": "Список ID заказов для завершения",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "order_ids": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Заказы успешно завершены"
+          },
+          "400": {
+            "description": "Ошибка в запросе"
+          },
+          "401": {
+            "description": "Требуется авторизация"
+          }
+        }
+      }
+    },
+    "/orders/batch/cancel": {
+      "post": {
+        "summary": "Пакетная отмена заказов",
+        "description": "Отменяет несколько заказов одновременно",
+        "parameters": [
+          {
+            "name": "order_ids",
+            "in": "body",
+            "description": "Список ID заказов для отмены",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "order_ids": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Заказы успешно отменены"
+          },
+          "400": {
+            "description": "Ошибка в запросе"
+          },
+          "401": {
+            "description": "Требуется авторизация"
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "Order": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "description": "Уникальный идентификатор заказа"
+        },
+        "user_order_id": {
+          "type": "integer",
+          "description": "Пользовательский ID заказа"
+        },
+        "client_name": {
+          "type": "string",
+          "description": "Имя клиента"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["active", "completed", "cancelled"],
+          "description": "Статус заказа"
+        },
+        "total_amount": {
+          "type": "number",
+          "format": "float",
+          "description": "Общая сумма заказа"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Дата создания заказа"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Дата последнего обновления заказа"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/OrderItem"
+          },
+          "description": "Товары в заказе"
+        }
+      }
+    },
+    "OrderItem": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "description": "Уникальный идентификатор товара"
+        },
+        "product_name": {
+          "type": "string",
+          "description": "Название товара"
+        },
+        "quantity": {
+          "type": "integer",
+          "description": "Количество"
+        },
+        "price": {
+          "type": "number",
+          "format": "float",
+          "description": "Цена за единицу"
+        },
+        "subtotal": {
+          "type": "number",
+          "format": "float",
+          "description": "Общая стоимость (количество * цена)"
+        }
+      }
+    },
+    "OrderInput": {
+      "type": "object",
+      "properties": {
+        "client_name": {
+          "type": "string",
+          "description": "Имя клиента"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "product_name": {
+                "type": "string",
+                "description": "Название товара"
+              },
+              "quantity": {
+                "type": "integer",
+                "description": "Количество"
+              },
+              "price": {
+                "type": "number",
+                "format": "float",
+                "description": "Цена за единицу"
+              }
+            }
+          },
+          "description": "Товары в заказе"
+        }
+      },
+      "required": ["client_name", "items"]
+    },
+    "Pagination": {
+      "type": "object",
+      "properties": {
+        "page": {
+          "type": "integer",
+          "description": "Текущая страница"
+        },
+        "per_page": {
+          "type": "integer",
+          "description": "Количество элементов на странице"
+        },
+        "total": {
+          "type": "integer",
+          "description": "Общее количество элементов"
+        },
+        "pages": {
+          "type": "integer",
+          "description": "Общее количество страниц"
+        }
+      }
+    }
+  }
+} 

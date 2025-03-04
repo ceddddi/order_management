@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}Редактирование заказа #{{ order.id }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="orders-header">
+        <h1>Редактирование заказа #{{ order.id }}</h1>
+    </div>
+    
+    <div class="orders-table-container">
+        <form id="orderForm" method="POST" onsubmit="return validateForm('orderForm')">
+            <div class="mb-4">
+                <label for="client_name" class="form-label">Имя клиента</label>
+                <input type="text" class="form-control" id="client_name" name="client_name" 
+                       value="{{ order.client_name }}" required>
+            </div>
+
+            <div id="items" class="mb-4">
+                <h3 class="mb-3">Товары</h3>
+                {% for item in order.items %}
+                <div class="item mb-4">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <label class="form-label">Название товара</label>
+                            <input type="text" class="form-control" name="product_name_{{ loop.index0 }}"
+                                   value="{{ item.product_name }}" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Количество</label>
+                            <input type="number" class="form-control" name="quantity_{{ loop.index0 }}"
+                                   value="{{ item.quantity }}" min="1" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Цена</label>
+                            <input type="number" class="form-control" name="price_{{ loop.index0 }}"
+                                   value="{{ item.price }}" min="0.01" step="0.01" required>
+                        </div>
+                        {% if not loop.first %}
+                        <div class="col-md-2">
+                            <label class="form-label">&nbsp;</label>
+                            <button type="button" class="btn btn-danger form-control" onclick="removeItem(this)">
+                                <i class="bi bi-trash"></i> Удалить
+                            </button>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <button type="button" class="btn btn-secondary mb-4" onclick="addItem()">
+                <i class="bi bi-plus-circle"></i> Добавить товар
+            </button>
+
+            <div class="d-flex gap-3">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check-circle"></i> Сохранить изменения
+                </button>
+                <a href="{{ url_for('view_order', order_id=order.id) }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-x-circle"></i> Отмена
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+let itemCount = {{ order.items|length }};
+
+function addItem() {
+    const itemsDiv = document.getElementById('items');
+    const newItem = document.createElement('div');
+    newItem.className = 'item mb-4';
+    newItem.innerHTML = `
+        <div class="row">
+            <div class="col-md-4">
+                <label class="form-label">Название товара</label>
+                <input type="text" class="form-control" name="product_name_${itemCount}" required>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Количество</label>
+                <input type="number" class="form-control" name="quantity_${itemCount}" min="1" required>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Цена</label>
+                <input type="number" class="form-control" name="price_${itemCount}" min="0.01" step="0.01" required>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">&nbsp;</label>
+                <button type="button" class="btn btn-danger form-control" onclick="removeItem(this)">
+                    <i class="bi bi-trash"></i> Удалить
+                </button>
+            </div>
+        </div>
+    `;
+    itemsDiv.appendChild(newItem);
+    itemCount++;
+}
+
+function removeItem(button) {
+    button.closest('.item').remove();
+}
+</script>
+{% endblock %} 

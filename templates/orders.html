@@ -1,0 +1,342 @@
+{% extends "base.html" %}
+
+{% block title %}Заказы{% endblock %}
+
+{% block content %}
+<div class="orders-header">
+    <h2>Управление заказами</h2>
+    <div class="orders-actions">
+        <form action="{{ url_for('cleanup_cancelled_orders') }}" method="POST" class="d-inline">
+            <button type="submit" class="btn btn-warning" onclick="return confirm('Вы уверены, что хотите удалить все отмененные заказы? Это действие нельзя отменить.')">
+                <i class="bi bi-trash"></i> Очистить отмененные
+            </button>
+        </form>
+        <a href="{{ url_for('create_order') }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Создать заказ
+        </a>
+    </div>
+</div>
+
+<div class="orders-table-container mb-4">
+    <div class="card-header">
+        <h5>Фильтры</h5>
+    </div>
+    <div class="card-body">
+        <form method="GET" class="row g-3">
+            <div class="col-md-3">
+                <label for="status" class="form-label filter-label">Статус</label>
+                <select class="form-select" id="status" name="status">
+                    <option value="">Все</option>
+                    <option value="active" {% if request.args.get('status') == 'active' %}selected{% endif %}>Активные</option>
+                    <option value="completed" {% if request.args.get('status') == 'completed' %}selected{% endif %}>Завершенные</option>
+                    <option value="cancelled" {% if request.args.get('status') == 'cancelled' %}selected{% endif %}>Отмененные</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="date_from" class="form-label filter-label">Дата от</label>
+                <input type="date" class="form-control" id="date_from" name="date_from" value="{{ request.args.get('date_from', '') }}">
+            </div>
+            <div class="col-md-3">
+                <label for="date_to" class="form-label filter-label">Дата до</label>
+                <input type="date" class="form-control" id="date_to" name="date_to" value="{{ request.args.get('date_to', '') }}">
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-funnel"></i> Применить фильтры
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="batch-actions mb-3" id="batchActionsContainer" style="display: none;">
+    <button type="button" class="btn btn-success me-2" id="batchCompleteBtn" onclick="batchCompleteOrders()">
+        <i class="bi bi-check-circle"></i> Завершить выбранные
+    </button>
+    <button type="button" class="btn btn-danger me-2" id="batchCancelBtn" onclick="batchCancelOrders()">
+        <i class="bi bi-x-circle"></i> Отменить выбранные
+    </button>
+    <button type="button" class="btn btn-secondary" id="clearSelectionBtn" onclick="clearSelection()">
+        <i class="bi bi-x"></i> Очистить выбор
+    </button>
+    <span class="ms-3 selected-count" id="selectedCount">Выбрано: 0</span>
+</div>
+
+<div class="orders-table-container">
+    <div class="table-responsive">
+        <table class="table table-striped table-hover">
+            <thead>
+                <tr>
+                    <th>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="selectAllOrders" onchange="toggleAllOrders(this)">
+                            <label class="form-check-label" for="selectAllOrders"></label>
+                        </div>
+                    </th>
+                    <th>ID</th>
+                    <th>Дата создания</th>
+                    <th>Клиент</th>
+                    <th>Сумма</th>
+                    <th>Статус</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in orders %}
+                <tr>
+                    <td>
+                        <div class="form-check">
+                            <input class="form-check-input order-checkbox" type="checkbox" 
+                                   id="order{{ order.id }}" 
+                                   value="{{ order.id }}" 
+                                   data-status="{{ order.status.value }}"
+                                   onchange="updateSelectedCount()">
+                            <label class="form-check-label" for="order{{ order.id }}"></label>
+                        </div>
+                    </td>
+                    <td>{{ order.user_order_id }}</td>
+                    <td>{{ order.created_at.strftime('%d.%m.%Y %H:%M') }}</td>
+                    <td>{{ order.client_name }}</td>
+                    <td>{{ "%.2f"|format(order.total_amount) }} ₽</td>
+                    <td>
+                        <span class="badge bg-{{ order.status_color }}">{{ order.status_display }}</span>
+                    </td>
+                    <td>
+                        <div class="btn-group" role="group">
+                            <a href="{{ url_for('view_order', order_id=order.id) }}" class="btn btn-sm btn-info">
+                                <i class="bi bi-eye"></i> Просмотр
+                            </a>
+                            {% if order.status == 'active' %}
+                            <a href="{{ url_for('edit_order', order_id=order.id) }}" class="btn btn-sm btn-warning">
+                                <i class="bi bi-pencil"></i> Изменить
+                            </a>
+                            <button type="button" class="btn btn-sm btn-success" onclick="completeOrder({{ order.id }})">
+                                <i class="bi bi-check-circle"></i> Завершить
+                            </button>
+                            <button type="button" class="btn btn-sm btn-danger" onclick="cancelOrder({{ order.id }})">
+                                <i class="bi bi-x-circle"></i> Отменить
+                            </button>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr class="empty-row">
+                    <td colspan="7">
+                        <div class="empty-message">
+                            <i class="bi bi-inbox"></i> Заказы не найдены
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% if pages > 1 %}
+<nav aria-label="Page navigation" class="mt-4">
+    <ul class="pagination justify-content-center">
+        <li class="page-item {% if page == 1 %}disabled{% endif %}">
+            <a class="page-link" href="{{ url_for('orders', page=page-1, **request.args) if page > 1 else '#' }}">
+                Предыдущая
+            </a>
+        </li>
+        {% for p in range(1, pages + 1) %}
+        <li class="page-item {% if p == page %}active{% endif %}">
+            <a class="page-link" href="{{ url_for('orders', page=p, **request.args) }}">{{ p }}</a>
+        </li>
+        {% endfor %}
+        <li class="page-item {% if page == pages %}disabled{% endif %}">
+            <a class="page-link" href="{{ url_for('orders', page=page+1, **request.args) if page < pages else '#' }}">
+                Следующая
+            </a>
+        </li>
+    </ul>
+</nav>
+{% endif %}
+
+<!-- Уведомление о результате массовых действий -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3">
+    <div id="batchActionToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header">
+            <strong class="me-auto" id="toastTitle">Уведомление</strong>
+            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Закрыть"></button>
+        </div>
+        <div class="toast-body" id="toastMessage">
+            Действие выполнено успешно
+        </div>
+    </div>
+</div>
+
+<!-- Bootstrap Icons -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+
+<!-- JavaScript для обработки действий с заказами -->
+<script>
+// Функции для одиночных заказов
+function completeOrder(orderId) {
+    if (confirm('Вы уверены, что хотите завершить этот заказ?')) {
+        fetch(`/orders/${orderId}/complete`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        }).then(response => {
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                alert('Произошла ошибка при завершении заказа');
+            }
+        });
+    }
+}
+
+function cancelOrder(orderId) {
+    if (confirm('Вы уверены, что хотите отменить этот заказ?')) {
+        fetch(`/orders/${orderId}/cancel`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        }).then(response => {
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                alert('Произошла ошибка при отмене заказа');
+            }
+        });
+    }
+}
+
+// Функции для массовых действий
+function toggleAllOrders(checkbox) {
+    const checkboxes = document.querySelectorAll('.order-checkbox');
+    checkboxes.forEach(cb => {
+        cb.checked = checkbox.checked;
+    });
+    updateSelectedCount();
+}
+
+function updateSelectedCount() {
+    const selectedCheckboxes = document.querySelectorAll('.order-checkbox:checked');
+    const count = selectedCheckboxes.length;
+    document.getElementById('selectedCount').textContent = `Выбрано: ${count}`;
+    
+    // Показываем или скрываем панель массовых действий
+    const batchActionsContainer = document.getElementById('batchActionsContainer');
+    batchActionsContainer.style.display = count > 0 ? 'block' : 'none';
+    
+    // Проверяем, есть ли активные заказы среди выбранных
+    let hasActiveOrders = false;
+    selectedCheckboxes.forEach(cb => {
+        if (cb.dataset.status === 'active') {
+            hasActiveOrders = true;
+        }
+    });
+    
+    // Включаем или отключаем кнопки в зависимости от наличия активных заказов
+    document.getElementById('batchCompleteBtn').disabled = !hasActiveOrders;
+    document.getElementById('batchCancelBtn').disabled = !hasActiveOrders;
+}
+
+function clearSelection() {
+    const checkboxes = document.querySelectorAll('.order-checkbox');
+    checkboxes.forEach(cb => {
+        cb.checked = false;
+    });
+    document.getElementById('selectAllOrders').checked = false;
+    updateSelectedCount();
+}
+
+function getSelectedOrderIds() {
+    const selectedCheckboxes = document.querySelectorAll('.order-checkbox:checked');
+    return Array.from(selectedCheckboxes).map(cb => cb.value);
+}
+
+function showToast(title, message, success = true) {
+    const toastEl = document.getElementById('batchActionToast');
+    const toastTitle = document.getElementById('toastTitle');
+    const toastMessage = document.getElementById('toastMessage');
+    
+    toastTitle.textContent = title;
+    toastMessage.textContent = message;
+    
+    // Устанавливаем класс в зависимости от успешности операции
+    toastEl.classList.remove('bg-success', 'bg-danger', 'text-white');
+    if (success) {
+        toastEl.classList.add('bg-success', 'text-white');
+    } else {
+        toastEl.classList.add('bg-danger', 'text-white');
+    }
+    
+    const toast = new bootstrap.Toast(toastEl);
+    toast.show();
+}
+
+function batchCompleteOrders() {
+    const orderIds = getSelectedOrderIds();
+    if (orderIds.length === 0) {
+        showToast('Ошибка', 'Не выбрано ни одного заказа', false);
+        return;
+    }
+    
+    if (confirm(`Вы уверены, что хотите завершить ${orderIds.length} выбранных заказов?`)) {
+        fetch('/orders/batch/complete', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ order_ids: orderIds })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.count > 0) {
+                showToast('Успех', data.message, true);
+                setTimeout(() => window.location.reload(), 1500);
+            } else {
+                showToast('Информация', 'Нет активных заказов для завершения', false);
+            }
+        })
+        .catch(error => {
+            showToast('Ошибка', 'Произошла ошибка при выполнении операции', false);
+        });
+    }
+}
+
+function batchCancelOrders() {
+    const orderIds = getSelectedOrderIds();
+    if (orderIds.length === 0) {
+        showToast('Ошибка', 'Не выбрано ни одного заказа', false);
+        return;
+    }
+    
+    if (confirm(`Вы уверены, что хотите отменить ${orderIds.length} выбранных заказов?`)) {
+        fetch('/orders/batch/cancel', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ order_ids: orderIds })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.count > 0) {
+                showToast('Успех', data.message, true);
+                setTimeout(() => window.location.reload(), 1500);
+            } else {
+                showToast('Информация', 'Нет активных заказов для отмены', false);
+            }
+        })
+        .catch(error => {
+            showToast('Ошибка', 'Произошла ошибка при выполнении операции', false);
+        });
+    }
+}
+
+// Инициализация при загрузке страницы
+document.addEventListener('DOMContentLoaded', function() {
+    updateSelectedCount();
+});
+</script>
+{% endblock %} 

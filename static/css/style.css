@@ -1,0 +1,109 @@
+/* Общие стили */
+body {
+    background-color: #f8f9fa;
+}
+
+/* Стили для навигации */
+.navbar {
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,.1);
+}
+
+/* Стили для карточек */
+.card {
+    box-shadow: 0 2px 4px rgba(0,0,0,.05);
+    transition: all 0.3s ease;
+}
+
+.card:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,.1);
+    transform: translateY(-2px);
+}
+
+/* Стили для кнопок */
+.btn {
+    border-radius: 0.25rem;
+    transition: all 0.3s ease;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,.1);
+}
+
+/* Стили для форм */
+.form-control:focus {
+    box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+    border-color: #80bdff;
+}
+
+/* Стили для таблиц */
+.table {
+    background-color: white;
+    border-radius: 0.25rem;
+    overflow: hidden;
+}
+
+.table thead th {
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
+}
+
+/* Стили для значков статуса */
+.badge {
+    padding: 0.5em 1em;
+}
+
+/* Стили для пагинации */
+.pagination {
+    margin-top: 2rem;
+}
+
+.page-link {
+    color: #007bff;
+    background-color: white;
+    border: 1px solid #dee2e6;
+}
+
+.page-link:hover {
+    color: #0056b3;
+    background-color: #e9ecef;
+    border-color: #dee2e6;
+}
+
+.page-item.active .page-link {
+    background-color: #007bff;
+    border-color: #007bff;
+}
+
+/* Адаптивные стили */
+@media (max-width: 768px) {
+    .btn-group {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .btn-group .btn {
+        margin-bottom: 0.5rem;
+    }
+    
+    .table-responsive {
+        border: none;
+    }
+}
+
+/* Анимации */
+.alert {
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateY(-20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+} 
