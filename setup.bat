@@ -1,52 +1,54 @@
 @echo off
-chcp 65001 > nul
-echo Установка Order Management System
+echo Installing Order Management System
 echo ==============================
 echo.
 
-:: Проверка наличия Python
+:: Check Python
 python --version > nul 2>&1
 if errorlevel 1 (
-    echo Python не установлен!
-    echo Пожалуйста, установите Python с сайта https://www.python.org/downloads/
-    echo И не забудьте отметить галочку "Add Python to PATH" при установке
+    echo Python is not installed!
+    echo Please install Python from https://www.python.org/downloads/
+    echo And make sure to check "Add Python to PATH" during installation
     pause
     exit /b 1
 )
 
-:: Создание виртуального окружения
-echo Создание виртуального окружения...
+:: Create virtual environment
+echo Creating virtual environment...
 python -m venv venv
 if errorlevel 1 (
-    echo Ошибка при создании виртуального окружения!
+    echo Error creating virtual environment!
     pause
     exit /b 1
 )
 
-:: Активация виртуального окружения и установка зависимостей
-echo Установка зависимостей...
+:: Activate virtual environment and install dependencies
+echo Installing dependencies...
 call venv\Scripts\activate.bat
 python -m pip install --upgrade pip
 pip install -r requirements.txt
 if errorlevel 1 (
-    echo Ошибка при установке зависимостей!
+    echo Error installing dependencies!
     pause
     exit /b 1
 )
 
-:: Инициализация базы данных
-echo Инициализация базы данных...
+:: Initialize database
+echo Initializing database...
 python database.py
 if errorlevel 1 (
-    echo Ошибка при инициализации базы данных!
+    echo Error initializing database!
     pause
     exit /b 1
 )
 
 echo.
 echo ==============================
-echo Установка успешно завершена!
+echo Installation completed successfully!
 echo.
+echo Use start_app.bat to run the application
+echo.
+pause
 echo Для запуска приложения используйте start_app.bat
 echo.
 pause 
