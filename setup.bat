@@ -49,6 +49,3 @@ echo.
 echo Use start_app.bat to run the application
 echo.
 pause
-echo Для запуска приложения используйте start_app.bat
-echo.
-pause 
